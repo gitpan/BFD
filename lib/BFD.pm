@@ -1,6 +1,6 @@
 package BFD;
 
-$VERSION = 0.3;
+$VERSION = 0.31;
 
 =head1 NAME
 
@@ -68,8 +68,8 @@ use vars qw( $LineNumberWidth );
 
 $LineNumberWidth = 4;
 
-sub d {
-    my ( $fn, $ln )= (caller)[1,2];
+sub format_msg {
+    my ( $fn, $ln ) = ( shift, shift );
 
     ## Line number fields never get narrower so that you don't
     ## get output that's all jaggy.
@@ -80,7 +80,7 @@ sub d {
             ## Should use Config.pm's list of perl dirs, but hack for now
         }
         else {
-            my $rel_fn = File::Spec::abs2rel( $fn, $start_dir );
+            my $rel_fn = File::Spec->abs2rel( $fn, $start_dir );
             if ( 0 == index $rel_fn, File::Spec->updir ) {
                 $fn = $rel_fn;
             }
@@ -100,8 +100,25 @@ sub d {
     @_;
 
     1 while chomp $msg;
-    warn $msg, "\n";
+    return $msg;
 }
+
+
+sub d {
+    warn format_msg( (caller)[1,2], @_ );
+}
+
+
+sub d_to {
+    my $fh = shift;
+    print $fh format_msg( (caller)[1,2], @_ );
+}
+
+
+sub d_to_string {
+    format_msg( (caller)[1,2], @_ );
+}
+
 
 =head1 LIMITATIONS
 
@@ -118,8 +135,8 @@ Copyright (c) 2003, Barrie Slaymaker.  All Rights Reserved.
 
 =head1 LICENSE
 
-You may use this software under the terms of the GNU Pulic License, the
-Artistic License, the BSD license, the MIT license, etc., etc., etc.
+You may use this software under the terms of the GNU Public License, the
+Artistic License, the BSD license, or the MIT license.
 
 Good luck and God Speed.
 
