@@ -26,6 +26,7 @@ my $bar = "BAR";
 warn "hello"; use BFD; d $bar;
 warn "there";
 CODE_END
+
     $out =~ /\A<><.*hello.*BAR.*there/s
         ? ok $out, $out
         : ok $out, "hello.*BAR.*there";

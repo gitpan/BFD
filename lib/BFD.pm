@@ -1,6 +1,6 @@
 package BFD;
 
-$VERSION = 0.1;
+$VERSION = 0.3;
 
 =head1 NAME
 
@@ -17,7 +17,7 @@ $VERSION = 0.1;
 
 Allows for impromptu dumping of output to STDERR.  Useful when you want
 to take a peek at a nest Perl data structure by emitting (relatively)
-nicely formatted output.
+nicely formatted output with filename and line number prefixed to each line.
 
 Basically,
 
@@ -30,7 +30,9 @@ is shorthand for
     local $Data::Dumper::Quotekeys = 0;
     local $Data::Dumper::Terse     = 1;
     local $Data::Dumper::Sortkeys  = 1;
-    warn Dumper( $foo );
+    my $msg = Dumper( $foo );
+    $msg =~ s/^/$where: /mg;
+    warn $msg;
 
 I use this incantation soooo often that a TLA version is warranted.
 YMMV.
@@ -38,6 +40,8 @@ YMMV.
 =cut
 
 use strict;
+use Cwd qw( cwd );
+use File::Spec;
 
 sub import {
     no strict 'refs';
@@ -55,12 +59,48 @@ sub dump_ref {
 }
 
 
+my $start_dir;  ## Captured at compile time to use for shortening prefixes
+BEGIN {
+    $start_dir = cwd;
+};
+
+use vars qw( $LineNumberWidth );
+
+$LineNumberWidth = 4;
+
 sub d {
-    warn map
+    my ( $fn, $ln )= (caller)[1,2];
+
+    ## Line number fields never get narrower so that you don't
+    ## get output that's all jaggy.
+    $LineNumberWidth = length $ln if length $ln > $LineNumberWidth;
+
+    if ( File::Spec->file_name_is_absolute( $fn ) ) {
+        if ( $fn =~ s/.*\b(site_perl)\b/$1/ ) {
+            ## Should use Config.pm's list of perl dirs, but hack for now
+        }
+        else {
+            my $rel_fn = File::Spec::abs2rel( $fn, $start_dir );
+            if ( 0 == index $rel_fn, File::Spec->updir ) {
+                $fn = $rel_fn;
+            }
+        }
+    }
+
+
+    my $where = sprintf "%s, %${LineNumberWidth}d:", $fn, $ln;
+
+    my $msg = join "", map {
+        ( my $out = $_ ) =~ s/^/$where/gm;
+        $out;
+    } join "", map
         ! defined $_ ? "undef"
         : ref $_     ? dump_ref $_
                      : $_,
     @_;
+
+    1 while chomp $msg;
+    warn $msg, "\n";
 }
 
 =head1 LIMITATIONS

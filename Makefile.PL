@@ -4,7 +4,6 @@ WriteMakefile(
     NAME          => 'BFD',
     VERSION_FROM  => 'lib/BFD.pm',
     PREREQ_PM => {
-       "Filter::Util::Call" => 0,
     },
 );
 
